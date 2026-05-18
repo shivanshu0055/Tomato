@@ -1,13 +1,16 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { BACKEND_URL } from '../main'
 import toast from 'react-hot-toast'
 import { useGoogleLogin } from '@react-oauth/google'
+import { FaGoogle } from 'react-icons/fa'
 import axios from 'axios'
+import { useAppContext } from '../zustand/AppContext'
 
 const Login = () => {
     const [loading,setLoading]=useState(false)
     const navigate=useNavigate()
+    const fetchUser = useAppContext((state)=>state.fetchUser)
 
     const responseGoogle=async(authResults:any)=>{
         setLoading(true)
@@ -15,7 +18,10 @@ const Login = () => {
             const res=await axios.post(`${BACKEND_URL}/api/auth/login`,{
                 code:authResults.code
             })
-            localStorage.setItem("token",res.data.token)
+            const token = res.data.token
+            localStorage.setItem("token", token)
+            // update global store before navigating so ProtectedRoute sees auth
+            await fetchUser(token)
             toast.success(res.data.message)
             navigate('/')
         }
@@ -37,18 +43,14 @@ const Login = () => {
   return (
         <div className="login-page">
             <div className="login-shell">
-                <div className="login-copy">
-                    <span className="login-badge">Welcome back</span>
-                    <h1>Sign in to continue your Zomato experience</h1>
-                    <p>
-                        Discover restaurants, save your favourites, and keep your orders in one place.
-                    </p>
-                </div>
-
                 <div className="login-card">
-                    <div className="login-card-header">
-                        <h2>Login</h2>
-                        <p>Use your Google account to continue securely.</p>
+                    <span className="login-badge">Zomato</span>
+
+                    <div className="login-copy">
+                        <h1>Minimal sign in for your next order.</h1>
+                        <p>
+                            Sign in with Google to keep your favourites, orders, and updates in one simple place.
+                        </p>
                     </div>
 
                     <button
@@ -57,7 +59,12 @@ const Login = () => {
                         onClick={() => googleLogin()}
                         disabled={loading}
                     >
-                        {loading ? 'Signing you in...' : 'Continue with Google'}
+                        {loading ? 'Signing you in...' : (
+                            <>
+                                <FaGoogle />
+                                Continue with Google
+                            </>
+                        )}
                     </button>
 
                     <div className="login-note">
@@ -65,7 +72,7 @@ const Login = () => {
                     </div>
                 </div>
             </div>
-    </div>
+        </div>
   )
 }
 

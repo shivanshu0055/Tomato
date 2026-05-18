@@ -9,7 +9,7 @@ export interface AuthenticatedRequest extends Request {
 export const isAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) : Promise<void> => {
     try{
         const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('<Bearer> ')) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             res.status(401).json({ message: 'Please login - send valid auth headers'});
             return;
         }

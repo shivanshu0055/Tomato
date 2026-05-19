@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FaUser, FaMotorcycle, FaStore, FaCheck } from 'react-icons/fa'
-import { BACKEND_URL } from '../main'
+import { AUTH_BACKEND_URL } from '../main'
 import { useAppContext } from '../zustand/AppContext'
 
 const roleOptions = [
@@ -46,7 +46,7 @@ const SelectRole = () => {
     setSubmitting(true)
     try {
       const res = await axios.put(
-        `${BACKEND_URL}/api/auth/add/role`,
+        `${AUTH_BACKEND_URL}/api/auth/add/role`,
         { role },
         {
           headers: {

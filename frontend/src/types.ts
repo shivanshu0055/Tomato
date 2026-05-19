@@ -26,3 +26,39 @@ export interface AppStoreType {
 }
 
 
+export interface IRestaurant{
+    _id:string,
+    name: string,
+    description?: string,
+    image: string,
+    isVerified: boolean,
+    phone: string,
+    ownerId: string
+
+    autoLocation: { 
+        type: "Point",
+        coordinates: [number, number]
+        formattedAddress:string
+    }
+    
+    isOpen:boolean
+    createdAt: Date,
+}
+
+export interface IMenuItem {
+    _id: string,
+    restaurantId: string,
+    name: string,
+    description: string,
+    image?: string,
+    price: number,
+    isAvailable: boolean,
+    createdAt: Date,
+    updatedAt: Date,
+}
+
+export interface RestaurantLayoutContext {
+    restaurant: IRestaurant | null,
+    refreshRestaurant: () => Promise<void>,
+}
+

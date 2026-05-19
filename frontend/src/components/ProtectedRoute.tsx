@@ -5,13 +5,12 @@ const ProtectedRoute = () => {
     const isAuth = useAppContext((state)=>state.isAuth)
     const loading = useAppContext((state)=>state.loading)
     const user = useAppContext((state)=>state.user)
+    const location=useLocation()
     
     if(loading) return null
 
-    const location=useLocation()
-
     if(!isAuth) return <Navigate to="/login" replace/>
-
+    
     if(user?.role===null && location.pathname!=="/select-role"){
         return <Navigate to="/select-role" replace/>
     }

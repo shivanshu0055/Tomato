@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BACKEND_URL } from '../main'
+import { AUTH_BACKEND_URL } from '../main'
 import toast from 'react-hot-toast'
 import { useGoogleLogin } from '@react-oauth/google'
 import { FaGoogle } from 'react-icons/fa'
@@ -15,7 +15,7 @@ const Login = () => {
     const responseGoogle=async(authResults:any)=>{
         setLoading(true)
         try{
-            const res=await axios.post(`${BACKEND_URL}/api/auth/login`,{
+            const res=await axios.post(`${AUTH_BACKEND_URL}/api/auth/login`,{
                 code:authResults.code
             })
             const token = res.data.token

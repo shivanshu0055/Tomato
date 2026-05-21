@@ -15,19 +15,33 @@ import RestaurantOverview from './pages/Restaurant/RestaurantOverview'
 import RestaurantMenu from './pages/Restaurant/RestaurantMenu'
 import RestaurantAddItem from './pages/Restaurant/RestaurantAddItem'
 import RestaurantSales from './pages/Restaurant/RestaurantSales'
-
+import RestaurantDetails from './pages/Restaurant/RestaurantDetails'
+import Cart from './pages/Cart'
+import Address from './pages/Address'
+import 'leaflet/dist/leaflet.css'
+import Checkout from './pages/Checkout'
+import PaymentSuccess from './pages/PaymentSuccess'
 
 const App = () => {
   const fetchUser = useAppContext((state) => state.fetchUser)
+  const fetchLocation = useAppContext((state) => state.fetchLocation)
+  const fetchCart = useAppContext((state) => state.fetchCart)
   const token = localStorage.getItem("token")
 
   useEffect(() => {
-    if (token) {
-      fetchUser(token)
-    } else {
-      useAppContext.setState({ loading: false })
+    const init = async () => {
+      if (token) {
+        await fetchUser(token)
+        await fetchCart()
+      } else {
+        useAppContext.setState({ loading: false })
+      }
+
+      await fetchLocation()
     }
-  }, [fetchUser, token])
+
+    void init()
+  }, [fetchUser, fetchLocation, fetchCart, token])
 
   return (
     <BrowserRouter>
@@ -40,7 +54,12 @@ const App = () => {
           <Route path="/" element={<Homepage />} />
           <Route path="/select-role" element={<SelectRole />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/restaurant/:id" element={<RestaurantDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/address" element={<Address />} />
           <Route path="/restaurant/add" element={<RestaurantAdd />} />
+          <Route path="/paymentSuccess/:razorpayPaymentId" element={<PaymentSuccess />} />
           <Route path="/restaurant" element={<Restaurant />}>
             <Route index element={<RestaurantOverview />} />
             <Route path="menu" element={<RestaurantMenu />} />

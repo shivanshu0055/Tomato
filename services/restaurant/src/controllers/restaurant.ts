@@ -152,3 +152,55 @@ export const toggleIsOpen = tryCatch(async (req: AuthenticatedRequest, res) => {
         restaurant,
     })
 })
+
+
+export const getNearbyVerifiedRestaurants = tryCatch(async (req: AuthenticatedRequest, res) => {
+    const { latitude, longitude, radius = '5000', search = '' } = req.query
+
+    if (!latitude || !longitude) return res.status(400).json({ message: 'Latitude and longitude required' })
+
+    const query: any = { isVerified: true }
+
+    if (search && typeof search === 'string') {
+        query.name = { $regex: search, $options: 'i' }
+    }
+
+    const lat = Number(latitude)
+    const lng = Number(longitude)
+    const maxDistance = Number(radius) // meters
+
+    const results = await Restaurant.aggregate([
+        {
+            $geoNear: {
+                near: { type: 'Point', coordinates: [lng, lat] },
+                distanceField: 'distance',
+                spherical: true,
+                maxDistance,
+                query,
+            },
+        },
+        { $sort: { isOpen: -1, distance: 1 } },
+        {
+            $addFields: {
+                distanceKm: { $round: [{ $divide: ['$distance', 1000] }, 2] },
+            },
+        },
+    ])
+
+    return res.json({ success: true, restaurants: results,count: results.length })
+})
+
+export const fetchSingleRestaurant=tryCatch(async(req:AuthenticatedRequest,res)=>{
+    const {id}=req.params
+    if(!id){
+        res.status(400).json({message:'Restaurant id is required'})
+        return
+    }
+    const restaurant=await Restaurant.findById(id)
+
+    if(!restaurant){
+        res.status(404).json({message:'Restaurant not found'})
+        return
+    }
+    res.status(200).json({ restaurant })
+})

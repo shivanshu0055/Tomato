@@ -20,11 +20,14 @@ export interface AppStoreType {
     location:LocationDataType | null,
     isLoadingLocation:boolean,
     city:string,
-
+    cart: ICart[] | null,
+    quantity: number | null,
+    subTotal: number | null,
     fetchUser:(token:string)=>Promise<void>,
+    fetchLocation:()=>Promise<void>,
+    fetchCart:()=>Promise<void>,
     clearUser:()=>void
 }
-
 
 export interface IRestaurant{
     _id:string,
@@ -62,3 +65,12 @@ export interface RestaurantLayoutContext {
     refreshRestaurant: () => Promise<void>,
 }
 
+export interface ICart extends Document{
+    _id: string,
+    userId: string,
+    restaurantId: string | IRestaurant,
+    itemId:string | IMenuItem,
+    quantity: number,
+    createdAt: Date,
+    updatedAt: Date,
+}

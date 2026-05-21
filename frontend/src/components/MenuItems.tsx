@@ -2,9 +2,14 @@ import type { IMenuItem } from '../types'
 
 interface MenuItemsProps {
   item: IMenuItem
+  canManage?: boolean
+  onToggleAvailability?: (itemId: string) => void | Promise<void>
+  togglingItemId?: string | null
 }
 
-const MenuItems = ({ item }: MenuItemsProps) => {
+const MenuItems = ({ item, canManage = false, onToggleAvailability, togglingItemId }: MenuItemsProps) => {
+  const isToggling = togglingItemId === item._id
+
   return (
     <article className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm">
       <div className="relative h-52 w-full overflow-hidden bg-gray-100">
@@ -35,6 +40,17 @@ const MenuItems = ({ item }: MenuItemsProps) => {
           </span>
           <span className="text-xs text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</span>
         </div>
+
+        {canManage && onToggleAvailability && (
+          <button
+            type="button"
+            onClick={() => void onToggleAvailability(item._id)}
+            disabled={isToggling}
+            className="inline-flex items-center justify-center rounded-full border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isToggling ? 'Updating...' : item.isAvailable ? 'Mark unavailable' : 'Mark available'}
+          </button>
+        )}
       </div>
     </article>
   )

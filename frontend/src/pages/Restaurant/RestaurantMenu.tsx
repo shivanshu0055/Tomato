@@ -6,11 +6,16 @@ import toast from 'react-hot-toast'
 import MenuItems from '../../components/MenuItems'
 import { RESTAURANT_BACKEND_URL } from '../../main'
 import type { IMenuItem, RestaurantLayoutContext } from '../../types'
+import { useAppContext } from '../../zustand/AppContext'
 
 const RestaurantMenu = () => {
   const { restaurant } = useOutletContext<RestaurantLayoutContext>()
+  const user = useAppContext((state) => state.user)
   const [items, setItems] = useState<IMenuItem[]>([])
   const [loadingItems, setLoadingItems] = useState(true)
+  const [togglingItemId, setTogglingItemId] = useState<string | null>(null)
+
+  const canManage = Boolean(user && restaurant && String(restaurant.ownerId) === String(user._id))
 
   useEffect(() => {
     if (!restaurant?._id) return
@@ -40,6 +45,37 @@ const RestaurantMenu = () => {
 
     void loadItems()
   }, [restaurant?._id])
+
+  const handleToggleAvailability = async (itemId: string) => {
+    const token = localStorage.getItem('token')
+    if (!token || !canManage) {
+      return
+    }
+
+    setTogglingItemId(itemId)
+    try {
+      const res = await axios.get(`${RESTAURANT_BACKEND_URL}/api/menu-items/status/${itemId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const updatedItem = res.data?.menuItem as IMenuItem | undefined
+      if (updatedItem) {
+        setItems((current) => current.map((item) => (item._id === updatedItem._id ? updatedItem : item)))
+      } else {
+        setItems((current) =>
+          current.map((item) => (item._id === itemId ? { ...item, isAvailable: !item.isAvailable } : item))
+        )
+      }
+
+      toast.success(res.data?.message || 'Menu item availability updated')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to update item availability')
+    } finally {
+      setTogglingItemId(null)
+    }
+  }
 
   if (!restaurant) {
     return null
@@ -71,7 +107,13 @@ const RestaurantMenu = () => {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {items.map((item) => (
-              <MenuItems key={item._id} item={item} />
+              <MenuItems
+                key={item._id}
+                item={item}
+                canManage={canManage}
+                onToggleAvailability={handleToggleAvailability}
+                togglingItemId={togglingItemId}
+              />
             ))}
           </div>
         )}

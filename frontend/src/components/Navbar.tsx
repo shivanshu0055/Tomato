@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { FaUserCircle, FaSignOutAlt, FaSearch, FaUtensils } from 'react-icons/fa'
+import { FaUserCircle, FaSignOutAlt, FaSearch, FaUtensils, FaShoppingCart, FaMapMarkerAlt } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 import { useAppContext } from '../zustand/AppContext'
 
 const Navbar = () => {
   const isAuth = useAppContext((state) => state.isAuth)
-  const isLoadingLocation = useAppContext((state) => state.isLoadingLocation)
   const city = useAppContext((state) => state.city)
   const clearUser = useAppContext((state) => state.clearUser)
   const currentLocation = useLocation()
   const isHomePage = currentLocation.pathname === '/'
   const navigate = useNavigate()
+  const quantity = useAppContext((state) => state.quantity)
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
@@ -24,39 +24,6 @@ const Navbar = () => {
 
     return () => clearTimeout(timer)
   }, [search, setSearchParams])
-
-
-  useEffect(()=>{
-    if(!navigator.geolocation) return alert("Geolocation is not supported by your browser. Please allow location access for better experience.")
-    useAppContext.setState({ isLoadingLocation: true })
-    navigator.geolocation.getCurrentPosition(async (position)=>{
-        const {latitude,longitude}=position.coords
-        try{
-          const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=en&email=support@zomato.com`)
-          const data=await res.json()
-          useAppContext.setState({ location: {
-            latitude,
-            longitude,
-            formattedAddress:data.display_name || "Current Location"
-          }
-          , isLoadingLocation: false })
-          useAppContext.setState({ city: data.address?.city || data.address?.town || data.address?.village || "Current Location" })
-        }
-        catch(err:any){
-          useAppContext.setState({ location: {
-            latitude,
-            longitude,
-            formattedAddress:"Current Location"
-          },
-          isLoadingLocation: false })
-          useAppContext.setState({ city: "Current Location" })
-          console.log(err);
-        }
-    },(err)=>{
-        console.log(err);
-        useAppContext.setState({ isLoadingLocation: false })
-    })
-  },[])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -102,6 +69,26 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3 self-start lg:self-auto">
+            <button
+              type="button"
+              onClick={() => navigate('/cart')}
+              className="relative inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              <FaShoppingCart className="h-4 w-4" />
+              {quantity ? (
+                <span className="-mr-2 ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-xs font-bold text-white">
+                  {quantity}
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/address')}
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              <FaMapMarkerAlt className="h-4 w-4" />
+              Address
+            </button>
             <button
               type="button"
               onClick={() => navigate('/account')}

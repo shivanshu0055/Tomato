@@ -4,14 +4,20 @@ import { FaPlusCircle } from 'react-icons/fa'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import AddMenuItems from '../../components/AddMenuItems'
+import MenuItems from '../../components/MenuItems'
 import { RESTAURANT_BACKEND_URL } from '../../main'
 import type { IMenuItem, RestaurantLayoutContext } from '../../types'
+import { useAppContext } from '../../zustand/AppContext'
 
 const RestaurantAddItem = () => {
   const { restaurant } = useOutletContext<RestaurantLayoutContext>()
+  const user = useAppContext((state) => state.user)
   const [openAddModal, setOpenAddModal] = useState(false)
   const [items, setItems] = useState<IMenuItem[]>([])
   const [loadingItems, setLoadingItems] = useState(true)
+  const [togglingItemId, setTogglingItemId] = useState<string | null>(null)
+
+  const canManage = Boolean(user && restaurant && String(restaurant.ownerId) === String(user._id))
 
   useEffect(() => {
     if (!restaurant?._id) return
@@ -46,6 +52,37 @@ const RestaurantAddItem = () => {
     setItems((current) => [item, ...current])
   }
 
+  const handleToggleAvailability = async (itemId: string) => {
+    const token = localStorage.getItem('token')
+    if (!token || !canManage) {
+      return
+    }
+
+    setTogglingItemId(itemId)
+    try {
+      const res = await axios.get(`${RESTAURANT_BACKEND_URL}/api/menu-items/status/${itemId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const updatedItem = res.data?.menuItem as IMenuItem | undefined
+      if (updatedItem) {
+        setItems((current) => current.map((item) => (item._id === updatedItem._id ? updatedItem : item)))
+      } else {
+        setItems((current) =>
+          current.map((item) => (item._id === itemId ? { ...item, isAvailable: !item.isAvailable } : item))
+        )
+      }
+
+      toast.success(res.data?.message || 'Menu item availability updated')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to update item availability')
+    } finally {
+      setTogglingItemId(null)
+    }
+  }
+
   if (!restaurant) {
     return null
   }
@@ -78,27 +115,17 @@ const RestaurantAddItem = () => {
             </p>
           </div>
         ) : (
-          items.map((item) => (
-            <div key={item._id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-base font-semibold text-gray-900">{item.name}</p>
-                  <p className="mt-1 text-sm text-gray-600">{item.description}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-base font-semibold text-amber-700">Rs {Number(item.price).toFixed(2)}</p>
-                  <span
-                    className={[
-                      'mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold',
-                      item.isAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700',
-                    ].join(' ')}
-                  >
-                    {item.isAvailable ? 'Available' : 'Unavailable'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {items.map((item) => (
+              <MenuItems
+                key={item._id}
+                item={item}
+                canManage={canManage}
+                onToggleAvailability={handleToggleAvailability}
+                togglingItemId={togglingItemId}
+              />
+            ))}
+          </div>
         )}
       </div>
 

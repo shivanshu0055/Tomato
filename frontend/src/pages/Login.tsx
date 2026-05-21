@@ -11,6 +11,7 @@ const Login = () => {
     const [loading,setLoading]=useState(false)
     const navigate=useNavigate()
     const fetchUser = useAppContext((state)=>state.fetchUser)
+    const fetchCart = useAppContext((state)=>state.fetchCart)
 
     const responseGoogle=async(authResults:any)=>{
         setLoading(true)
@@ -22,6 +23,7 @@ const Login = () => {
             localStorage.setItem("token", token)
             // update global store before navigating so ProtectedRoute sees auth
             await fetchUser(token)
+            await fetchCart()
             toast.success(res.data.message)
             navigate('/')
         }

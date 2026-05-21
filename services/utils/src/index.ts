@@ -3,9 +3,12 @@ import dotenv from 'dotenv';
 import cloudinary from 'cloudinary'
 import cors from 'cors';
 import cloudinaryRouter from './routes/cloudinary.js';
-
+import { connectRabbitMQ } from './config/rabbitmq.js';
+import  paymentRouter  from './routes/payment.js';
 
 dotenv.config();
+
+connectRabbitMQ()
 
 const app = express();
 
@@ -29,7 +32,7 @@ cloudinary.v2.config({
 const PORT=process.env.PORT || 5002;
 
 app.use("/api/upload",cloudinaryRouter)
-
+app.use("/api/payment",paymentRouter)
 app.listen(PORT,()=>{
     console.log(`Utils server is running on port ${PORT}`);
 })

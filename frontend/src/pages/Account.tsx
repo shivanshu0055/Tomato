@@ -150,7 +150,7 @@ const Account = () => {
                         <div className="grid grid-cols-2 gap-3">
                             {/* Addresses */}
                             <button
-                                onClick={() => navigate('/addresses')}
+                                onClick={() => navigate('/address')}
                                 className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition hover:border-amber-200 hover:bg-amber-50/50"
                             >
                                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 flex-shrink-0">

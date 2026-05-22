@@ -13,4 +13,6 @@ restaurantRouter.patch("/toggleIsOpen",isAuth,isSeller,toggleIsOpen)
 restaurantRouter.get("/all",isAuth,getNearbyVerifiedRestaurants)
 restaurantRouter.get("/:id",isAuth,fetchSingleRestaurant)
 
+
+
 export default restaurantRouter;

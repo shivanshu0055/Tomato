@@ -2,6 +2,7 @@ import mongoose, {Schema, Document} from "mongoose";
 
 export interface IOrder extends Document{
     userId:string,
+    userName:string,
     restaurantId:string,
     restaurantName:string,
     riderId?:string|null,
@@ -10,6 +11,7 @@ export interface IOrder extends Document{
     cartItems:{
         itemId:string,
         name:string,
+        image:string,
         price:number,
         quantity:number
     }[],
@@ -36,6 +38,10 @@ export interface IOrder extends Document{
 const orderSchema=new Schema<IOrder>({
     
     userId:{
+        type: String,
+        required: true,
+    },
+    userName:{
         type: String,
         required: true,
     },
@@ -93,6 +99,10 @@ const orderSchema=new Schema<IOrder>({
             name:{
                 type: String,
                 required: true,
+            },
+            image:{
+                type: String,
+                default: '',
             },
             price:{
                 type: Number,

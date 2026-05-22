@@ -33,6 +33,7 @@ const PORT=process.env.PORT || 5002;
 
 app.use("/api/upload",cloudinaryRouter)
 app.use("/api/payment",paymentRouter)
+
 app.listen(PORT,()=>{
     console.log(`Utils server is running on port ${PORT}`);
 })

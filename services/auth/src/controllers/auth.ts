@@ -101,3 +101,28 @@ export const myProfile=tryCatch(async(req:AuthenticatedRequest,res)=>{
         "user":req.user
     })
 })
+
+export const fetchUsersByIds = tryCatch(async (req, res) => {
+    if (req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY) {
+        res.status(403).json({ message: 'Forbidden' })
+        return
+    }
+
+    const ids = typeof req.body?.ids === 'string' ? [req.body.ids] : req.body?.ids
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        res.status(400).json({ message: 'User ids are required' })
+        return
+    }
+
+    const users = await User.find({ _id: { $in: ids } }).select('_id name image')
+
+    res.status(200).json({
+        success: true,
+        users: users.map((user) => ({
+            _id: user._id.toString(),
+            name: user.name,
+            image: user.image,
+        })),
+    })
+})

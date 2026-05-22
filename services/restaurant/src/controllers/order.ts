@@ -5,7 +5,8 @@ import Cart from "../model/Cart.js";
 import { IRestaurant, Restaurant } from "../model/Restaurant.js";
 import {IMenuItem} from "../model/MenuItems.js"
 import Order from "../model/Order.js";
-
+import mongoose from "mongoose";
+import axios from "axios";
 function getDistance(lat1:number, lon1:number, lat2:number, lon2:number) {
     const R = 6371; // Earth radius in km
 
@@ -90,6 +91,7 @@ export const createOrder = tryCatch(async(req:AuthenticatedRequest,res) => {
 
     const order=await Order.create({
     userId: user._id.toString(),
+    userName: user.name,
     restaurantId: restaurant._id.toString(),
     restaurantName: restaurant.name,
     riderId: null,
@@ -113,6 +115,7 @@ export const createOrder = tryCatch(async(req:AuthenticatedRequest,res) => {
     cartItems: cartItems.map((cartItem) => ({
             itemId: cartItem.itemId?._id.toString() || "",
             name: cartItem.itemId && 'name' in cartItem.itemId ? cartItem.itemId.name : "Unknown Item",
+            image: cartItem.itemId && 'image' in cartItem.itemId ? (cartItem.itemId.image || '') : '',
             price: cartItem.itemId && 'price' in cartItem.itemId ? cartItem.itemId.price : 0,
             quantity: cartItem.quantity
         }))
@@ -146,4 +149,132 @@ export const fetchOrderForPayment=tryCatch(async(req:AuthenticatedRequest,res)=>
 
     res.status(200).json({orderId:order._id.toString(),amount:order.grandTotal,currency:"INR"})
 })
+
+export const fetchRestaurantOrders=tryCatch(async(req:AuthenticatedRequest,res)=>{
+    const user=req.user
+    if(!user){
+        return res.status(401).json({message:"Unauthorized"})
+    }
+
+    const {restaurantId}=req.params
+
+    if(!restaurantId){
+        return res.status(400).json({message:"Restaurant Id is required"})
+    }
+
+    const restaurant=await Restaurant.findById(restaurantId)
+    
+    if(!restaurant){
+        return res.status(404).json({message:"Restaurant not found"})
+    }
+
+    if(restaurant.ownerId.toString()!==user._id.toString()){
+        return res.status(403).json({message:"Forbidden"})
+    }
+
+    const  {limit}=req.query
+
+    const orders=await Order.find({ restaurantId, paymentStatus: "paid" }).sort({ createdAt: -1 }).limit(limit ? Number(limit) : 10)
+    res.status(200).json({success:true, orders,count: orders.length})
+})
+
+const allowedStatus=['accepted','preparing','ready_for_rider'] as const
+
+export const updateOrderStatus = tryCatch(async(req:AuthenticatedRequest,res)=>{
+    const user=req.user
+
+    if(!user){
+        return res.status(401).json({message:"Unauthorized"})
+    }
+
+    const { orderId }=req.params
+
+    const { status }=req.body
+
+    if(!allowedStatus.includes(status)){
+        return res.status(400).json({message:"Invalid status given"})
+    }
+
+    const order=await Order.findById(orderId)
+
+    if(!order){
+        return res.status(404).json({message:"Order not found"})
+    }
+
+    if(order.paymentStatus!="paid"){
+        return res.status(400).json({message:"Cannot update status of unpaid order"})
+    }
+
+    const restaurant=await Restaurant.findById(order.restaurantId)
+
+    if(!restaurant){
+        return res.status(404).json({message:"Restaurant not found"})
+    }
+
+    if(restaurant.ownerId.toString()!==user._id.toString()){
+        return res.status(403).json({message:"You are not the owner of this restaurant"})
+    }
+
+    order.status=status
+
+    await order.save()
+
+    // res.status(200).json({message:"Order status updated successfully",orderId: order._id.toString(),status: order.status})
+    await axios.post(`${process.env.REALTIME_BACKEND_URL}/api/internal/emit`,{
+        event:"order_update",
+        room:`user:${order.userId}`,
+        payload:{
+            orderId: order._id,
+            status: order.status
+        }
+    },{
+        headers:{
+            "x-internal-key": process.env.INTERNAL_SERVICE_KEY as string
+        }
+    })
+
+    // now assign riders
+
+
+    res.status(200).json({
+        message:"Order status updated successfully",
+        order:order  
+    })
+})
+
+
+export const getMyOrders=tryCatch(async(req:AuthenticatedRequest,res)=>{
+    const user=req.user 
+
+    if(!user){
+        return res.status(401).json({message:"Unauthorized"})
+    }
+
+    const orders=await Order.find({ userId: user._id.toString(), paymentStatus: "paid" }).sort({ createdAt: -1 })
+
+    res.status(200).json({success:true, orders,count: orders.length})
+})
+
+export const fetchSingleOrder=tryCatch(async(req:AuthenticatedRequest,res)=>{
+    const user=req.user
+
+    if(!user){
+        return res.status(401).json({message:"Unauthorized"})
+    }
+    
+    const {orderId}=req.params
+    const order=await Order.findById(orderId)
+
+    if(!order){
+        return res.status(404).json({message:"Order not found"})
+    }
+
+    if(order.userId.toString()!==user._id.toString()){
+        return res.status(403).json({message:"Forbidden"})
+    }
+
+    res.status(200).json({success:true, order})
+})
+
+
 

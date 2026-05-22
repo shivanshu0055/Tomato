@@ -21,6 +21,7 @@ import Address from './pages/Address'
 import 'leaflet/dist/leaflet.css'
 import Checkout from './pages/Checkout'
 import PaymentSuccess from './pages/PaymentSuccess'
+import { initializeSocketListener } from './zustand/SocketListener'
 
 const App = () => {
   const fetchUser = useAppContext((state) => state.fetchUser)
@@ -33,6 +34,7 @@ const App = () => {
       if (token) {
         await fetchUser(token)
         await fetchCart()
+        initializeSocketListener();
       } else {
         useAppContext.setState({ loading: false })
       }

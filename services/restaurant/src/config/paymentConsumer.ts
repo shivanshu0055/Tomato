@@ -1,3 +1,4 @@
+import axios from "axios";
 import Order from "../model/Order.js";
 import {getChannel} from "./rabbitmq.js";
 
@@ -26,6 +27,18 @@ export const startPaymentConsumer = async () => {
             console.log("Order Placed from Rabbit MQ",order._id)
 
             // socket work
+            await axios.post(`${process.env.REALTIME_BACKEND_URL}/api/internal/emit`,{
+                event:"order_new",
+                room:`restaurant:${order.restaurantId}`,
+                payload:{
+                    orderId: order._id
+                }
+            },{
+                headers:{
+                    "x-internal-key": process.env.INTERNAL_SERVICE_KEY as string
+                }
+            })
+
             channel.ack(msg)
             }
         catch(error){
